@@ -1,0 +1,8 @@
+{
+    "servers": {
+        "uvicorn": "",
+        "nodejs": "",
+        "vue": "",
+        "test": ""
+    }
+}

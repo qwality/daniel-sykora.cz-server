@@ -1,0 +1,1 @@
+echo bash script start

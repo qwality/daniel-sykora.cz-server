@@ -1,0 +1,7 @@
+server_ip:      https://46.41.139.161
+domain_name:    https://www.qwality.fun | http://www.daniel-sykora.cz
+server_admin:   https://cp.ionos.cz/servlet/Turbine/frm/single
+dns_admin:      https://client.wedos.com/dns/
+ssh:            root@qwality.fun
+git_hub_repo:   https://github.com/qwality/CV_for_server
+ssl:            ??
