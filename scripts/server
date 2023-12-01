@@ -1,0 +1,2 @@
+#!/bin/bash
+python /var/admin/scripts/server.py "$@"
