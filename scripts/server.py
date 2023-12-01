@@ -26,7 +26,7 @@ servers_to_config = args.servers
 
 # print(args)
 
-# print(f'servers_to_config: {servers_to_config} {args.action} {args.self} {args.all}\n')
+print(f'\tupdating {'admin' if args.self else servers_to_config if args.all else servers_to_config[0]} with action {args.action}')
 
 if args.self:
     print(f'\tp: updating admin')
