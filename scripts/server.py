@@ -52,7 +52,7 @@ else:
     # print(f'will check: {list(filter(lambda i: os.path.isdir(os.path.join(WEBS_PATH, i)), os.listdir(WEBS_PATH)))}')
     for sub_dir_name in filter(lambda i: os.path.isdir(os.path.join(WEBS_PATH, i)), os.listdir(WEBS_PATH)):
         sub_dir_path = os.path.join(WEBS_PATH, sub_dir_name)
-        print(f'\tp: checking {sub_dir_path}')
+        # print(f'\tp: checking {sub_dir_path}')
 
         if CFG_FILE in os.listdir(sub_dir_path) and (args.all or sub_dir_name in servers_to_config):
             print(f'\tp: updating {sub_dir_name}')
