@@ -1,6 +1,6 @@
 import subprocess, json, os, argparse
 
-print('start pyhton\n')
+print('p: server config script:\n')
 
 ADMIN_PATH = '/var/admin'
 WEBS_PATH = '/var/web'
@@ -24,9 +24,9 @@ args = get_args()
 
 servers_to_config = args.servers
 
-print(args)
+# print(args)
 
-print(f'servers_to_config: {servers_to_config} {args.action} {args.self} {args.all}\n')
+# print(f'servers_to_config: {servers_to_config} {args.action} {args.self} {args.all}\n')
 
 if args.self:
     with open(os.path.join(ADMIN_PATH, CFG_FILE), 'r') as cfg_file:
@@ -34,21 +34,42 @@ if args.self:
     
     if args.action == 'update':
         subprocess.run(data['servers']['this']['commands']['update'], shell=True, cwd=ADMIN_PATH)
+        print('\tp: admin updated')
+    elif args.action == 'run':
+        subprocess.run(data['servers']['nginx']['commands']['start'], shell=True, cwd=ADMIN_PATH)
+        print('\tp: admin started')
+    elif args.action == 'stop':
+        subprocess.run(data['servers']['nginx']['commands']['stop'], shell=True, cwd=ADMIN_PATH)
+        print('\tp: admin stopped')
+    elif args.action == 'reset':
+        subprocess.run(data['servers']['nginx']['commands']['reset'], shell=True, cwd=ADMIN_PATH)
+        print('\tp: admin reseted')
+    elif args.action == 'redeploy':
+        subprocess.run(data['servers']['this']['commands']['update'], shell=True, cwd=ADMIN_PATH)
+        subprocess.run(data['servers']['nginx']['commands']['reset'], shell=True, cwd=ADMIN_PATH)
+        print('\tp: admin redeployed')
 
-# for sub_dir_name in filter(lambda i: os.path.isdir(i), os.listdir(WEBS_PATH)):
-#     sub_dir_path = os.path.join(WEBS_PATH, sub_dir_name)
+else:
+    for sub_dir_name in filter(lambda i: os.path.isdir(i), os.listdir(WEBS_PATH)):
+        sub_dir_path = os.path.join(WEBS_PATH, sub_dir_name)
 
-#     if CFG_FILE in os.listdir(sub_dir_path):
-#         with open(os.path.join(sub_dir_path, CFG_FILE), 'r') as cfg_file:
-#             data = json.load(cfg_file)
+        if CFG_FILE in os.listdir(sub_dir_path) and (args.all or sub_dir_name in servers_to_config):
+            with open(os.path.join(sub_dir_path, CFG_FILE), 'r') as cfg_file:
+                data = json.load(cfg_file)
 
-#         for server in data['servers']:
-#             print(server)
-#             if server == 'test':
-#                 subprocess.run(data['servers'][server]['commands']['start'], shell=True)
+            if args.action == 'update' or args.action == 'redeploy':
+                subprocess.run(data['servers']['this']['commands']['update'], shell=True, cwd=sub_dir_path)
+                print(f'\tp: {sub_dir_name} updated')
 
-# subprocess.run(['python', 'test/test_1/run.py'])
-# subprocess.run(['python', 'test/test_1/stop.py'])
-
-# print(p.pid)
+            for server in filter(lambda i: i != 'this', data['servers']):
+                if args.action == 'run':
+                    subprocess.run(data['servers'][server]['commands']['run'], shell=True, cwd=sub_dir_path)
+                    print(f'\tp: {server} started')
+                elif args.action == 'stop':
+                    subprocess.run(data['servers'][server]['commands']['stop'], shell=True, cwd=sub_dir_path)
+                    print(f'\tp: {server} stopped')
+                elif args.action == 'reset' or args.action == 'redeploy':
+                    subprocess.run(data['servers'][server]['commands']['run'], shell=True, cwd=sub_dir_path)
+                    subprocess.run(data['servers'][server]['commands']['stop'], shell=True, cwd=sub_dir_path)
+                    print(f'\tp: {server} reseted')
 
