@@ -1,0 +1,32 @@
+{
+    "servers": {
+        "uvicorn": {
+            "host": 8000,
+            "commands": {
+                "start": "uvicorn uvicorn.main:app --host 8000",
+                "stop": "kill -9 $(lsof -i:8000 -t)"
+            }
+        },
+        "nodejs": {
+            "host": 6000,
+            "commands": {
+                "start": "node nodejs/app.js",
+                "stop": "kill -9 $(lsof -i:6000 -t)"
+            }
+        },
+        "vue": {
+            "host": 5000,
+            "commands": {
+                "start": "npm --prefix ./vue run serve",
+                "stop": "kill -9 $(lsof -i:5000 -t)"
+            }
+        },
+        "test": {
+            "host": 7000,
+            "commands": {
+                "start": "pwd",
+                "stop": "echo 'test stop'"
+            }
+        }
+    }
+}
