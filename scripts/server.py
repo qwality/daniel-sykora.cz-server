@@ -49,8 +49,8 @@ if args.self:
         print('\t\tp: admin redeployed')
 
 else:
-    print(f'will check: {list(filter(lambda i: os.path.isdir(os.path.join(WEBS_PATH, i)), os.listdir(WEBS_PATH)))}')
-    for sub_dir_name in filter(lambda i: os.path.isdir(i), os.listdir(WEBS_PATH)):
+    # print(f'will check: {list(filter(lambda i: os.path.isdir(os.path.join(WEBS_PATH, i)), os.listdir(WEBS_PATH)))}')
+    for sub_dir_name in filter(lambda i: os.path.isdir(os.path.join(WEBS_PATH, i)), os.listdir(WEBS_PATH)):
         sub_dir_path = os.path.join(WEBS_PATH, sub_dir_name)
         print(f'\tp: checking {sub_dir_path}')
 
