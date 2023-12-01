@@ -41,11 +41,11 @@ if args.self:
         subprocess.run(data['servers']['nginx']['commands']['stop'], shell=True, cwd=ADMIN_PATH)
         print('\t\tp: admin stopped')
     elif args.action == 'reset':
-        subprocess.run(data['servers']['nginx']['commands']['reset'], shell=True, cwd=ADMIN_PATH)
+        subprocess.run(data['servers']['nginx']['commands']['restart'], shell=True, cwd=ADMIN_PATH)
         print('\t\tp: admin reseted')
     elif args.action == 'redeploy':
         subprocess.run(data['servers']['this']['commands']['update'], shell=True, cwd=ADMIN_PATH)
-        subprocess.run(data['servers']['nginx']['commands']['reset'], shell=True, cwd=ADMIN_PATH)
+        subprocess.run(data['servers']['nginx']['commands']['restart'], shell=True, cwd=ADMIN_PATH)
         print('\t\tp: admin redeployed')
 
 else:
