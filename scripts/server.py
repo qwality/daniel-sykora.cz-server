@@ -24,8 +24,6 @@ args = get_args()
 
 servers_to_config = args.servers
 
-# print(args)
-
 print(f'\tp: updating \'{'admin' if args.self else servers_to_config if args.all else servers_to_config[0]}\' with action \'{args.action}\'')
 
 if args.self:
@@ -53,6 +51,7 @@ if args.self:
 else:
     for sub_dir_name in filter(lambda i: os.path.isdir(i), os.listdir(WEBS_PATH)):
         sub_dir_path = os.path.join(WEBS_PATH, sub_dir_name)
+        print(f'\tp: checking {sub_dir_name}')
 
         if CFG_FILE in os.listdir(sub_dir_path) and (args.all or sub_dir_name in servers_to_config):
             print(f'\tp: updating {sub_dir_name}')
