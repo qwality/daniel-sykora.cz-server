@@ -1,0 +1,2 @@
+sudo certbot certonly --webroot -w /var/web/daniel-sykora.cz/static -d daniel-sykora
+.cz -d www.daniel-sykora.cz
