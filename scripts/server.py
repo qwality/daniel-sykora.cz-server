@@ -9,24 +9,43 @@ CFG_FILE = 'servers.json'
 def get_args():
     parser = argparse.ArgumentParser(description='Správa serverů.')
 
-    # Vytvoření vzájemně se vylučující skupiny pro první argument
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('servers', nargs='*', help='Jména serverů', default=[])
-    group.add_argument('-a', '--all', action='store_true', help='Všechny servery')
-    group.add_argument('--self', action='store_true', help='Vlastní server')
+    server_group = parser.add_mutually_exclusive_group(required=True)
+    server_group.add_argument('-a', '--all', action='store_true', help='Všechny servery')
+    server_group.add_argument('--self', action='store_true', help='Vlastní server')
+    server_group.add_argument('-s', '--servers', nargs='+', help='Jména serveru')
 
-    # Definování druhého povinného argumentu pro akce
-    parser.add_argument('action', choices=['stop', 'update', 'run', 'reset', 'redeploy'], help='Akce k provedení')
+    services_group = parser.add_mutually_exclusive_group(required=True)
+    services_group.add_argument('-f', '--full', action='store_true', help='Všechny servery')
+    services_group.add_argument('-l', '--services', nargs='+', help='Jména serveru')
 
-    return parser.parse_args()
+    parser.add_argument('-d', '--do', action='store_true', required=True)
+
+    actions_group = parser.add_mutually_exclusive_group(required=True)
+    actions_group.add_argument('--stop', action='store_true', help='stop')
+    actions_group.add_argument('--update', action='store_true', help='update')
+    actions_group.add_argument('--run', action='store_true', help='run')
+    actions_group.add_argument('--reset', action='store_true', help='reset')
+    actions_group.add_argument('--redeploy', action='store_true', help='redeploy')
+
+    args = parser.parse_args()
+
+    class my_args:
+        def __init__(self, args):
+            self.servers = args.servers if not (args.all or args.self) else [] if not args.self else ['self']
+            self.services = args.services if not args.full else []
+            self.action = 'stop' if args.stop else 'update' if args.update else 'run' if args.run else 'reset' if args.reset else 'redeploy'
+
+    args = my_args(args)
+
+    print(f'\tp: servers: {args.servers}, services: {args.services}, action: {args.action}')
+
+    return args
 
 args = get_args()
 
 servers_to_config = args.servers
 
-print(f'\tp: updating \'{'admin' if args.self else servers_to_config if args.all else servers_to_config[0]}\' with action \'{args.action}\'')
-
-if args.self:
+if args.servers and len(args.servers) >= 1 and args.servers[0] == 'self':
     print(f'\tp: updating admin')
     with open(os.path.join(ADMIN_PATH, CFG_FILE), 'r') as cfg_file:
         data = json.load(cfg_file)
@@ -54,7 +73,7 @@ else:
         sub_dir_path = os.path.join(WEBS_PATH, sub_dir_name)
         # print(f'\tp: checking {sub_dir_path}')
 
-        if CFG_FILE in os.listdir(sub_dir_path) and (args.all or sub_dir_name in servers_to_config):
+        if CFG_FILE in os.listdir(sub_dir_path) and (args.servers == [] or sub_dir_name in servers_to_config):
             print(f'\tp: updating {sub_dir_name}')
             with open(os.path.join(sub_dir_path, CFG_FILE), 'r') as cfg_file:
                 data = json.load(cfg_file)
