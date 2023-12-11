@@ -18,14 +18,11 @@ def get_args():
     services_group.add_argument('-f', '--full', action='store_true', help='Všechny servery')
     services_group.add_argument('-l', '--services', nargs='+', help='Jména serveru')
 
-    parser.add_argument('-d', '--do', action='store_true', required=True)
+    # parser.add_argument('-d', '--do', action='store_true', required=True)
 
     actions_group = parser.add_mutually_exclusive_group(required=True)
-    actions_group.add_argument('--stop', action='store_true', help='stop')
-    actions_group.add_argument('--update', action='store_true', help='update')
-    actions_group.add_argument('--run', action='store_true', help='run')
-    actions_group.add_argument('--reset', action='store_true', help='reset')
-    actions_group.add_argument('--redeploy', action='store_true', help='redeploy')
+    for action in ['stop', 'update', 'run', 'reset', 'redeploy']:
+        actions_group.add_argument(f'--{action}', action='store_true', help=action)
 
     args = parser.parse_args()
 
@@ -44,25 +41,27 @@ def get_args():
 args = get_args()
 
 servers_to_config = args.servers
+services_to_config = args.services
+action = args.action
 
-if args.servers and len(args.servers) >= 1 and args.servers[0] == 'self':
+if servers_to_config and len(servers_to_config) >= 1 and servers_to_config[0] == 'self':
     print(f'\tp: updating admin')
     with open(os.path.join(ADMIN_PATH, CFG_FILE), 'r') as cfg_file:
         data = json.load(cfg_file)
     
-    if args.action == 'update':
+    if action == 'update':
         subprocess.run(data['servers']['this']['commands']['update'], shell=True, cwd=ADMIN_PATH)
         print('\t\tp: admin updated')
-    elif args.action == 'run':
+    elif action == 'run':
         subprocess.run(data['servers']['nginx']['commands']['start'], shell=True, cwd=ADMIN_PATH)
         print('\t\tp: admin started')
-    elif args.action == 'stop':
+    elif action == 'stop':
         subprocess.run(data['servers']['nginx']['commands']['stop'], shell=True, cwd=ADMIN_PATH)
         print('\t\tp: admin stopped')
-    elif args.action == 'reset':
+    elif action == 'reset':
         subprocess.run(data['servers']['nginx']['commands']['restart'], shell=True, cwd=ADMIN_PATH)
         print('\t\tp: admin reseted')
-    elif args.action == 'redeploy':
+    elif action == 'redeploy':
         subprocess.run(data['servers']['this']['commands']['update'], shell=True, cwd=ADMIN_PATH)
         subprocess.run(data['servers']['nginx']['commands']['restart'], shell=True, cwd=ADMIN_PATH)
         print('\t\tp: admin redeployed')
@@ -73,30 +72,30 @@ else:
         sub_dir_path = os.path.join(WEBS_PATH, sub_dir_name)
         # print(f'\tp: checking {sub_dir_path}')
 
-        if CFG_FILE in os.listdir(sub_dir_path) and (args.servers == [] or sub_dir_name in servers_to_config):
+        if CFG_FILE in os.listdir(sub_dir_path) and (servers_to_config == [] or sub_dir_name in servers_to_config):
             print(f'\tp: updating {sub_dir_name}')
 
             with open(os.path.join(sub_dir_path, CFG_FILE), 'r') as cfg_file:
                 data = json.load(cfg_file)
 
-            if args.action == 'update' or args.action == 'redeploy':
+            if action == 'update' or action == 'redeploy':
                 subprocess.run(data['servers']['this']['commands']['update'], shell=True, cwd=sub_dir_path)
                 print(f'\t\tp: {sub_dir_name} updated')
 
-            for server in filter(lambda i: i != 'this', data['servers']):
-                print(f'\t\t\tp: updating {server} vs: {args.services}')
+            for service in filter(lambda i: i != 'this', data['servers']):
+                print(f'\t\t\tp: updating {service} vs: {services_to_config}')
 
-                if server not in args.services and args.services != []:
+                if service not in services_to_config and services_to_config != []:
                     continue
 
-                if args.action == 'run':
-                    subprocess.run(data['servers'][server]['commands']['run'], shell=True, cwd=sub_dir_path)
-                    print(f'\t\tp: {server} started')
-                elif args.action == 'stop':
-                    subprocess.run(data['servers'][server]['commands']['stop'], shell=True, cwd=sub_dir_path)
-                    print(f'\t\tp: {server} stopped')
-                elif args.action == 'reset' or args.action == 'redeploy':
-                    subprocess.run(data['servers'][server]['commands']['run'], shell=True, cwd=sub_dir_path)
-                    subprocess.run(data['servers'][server]['commands']['stop'], shell=True, cwd=sub_dir_path)
-                    print(f'\t\tp: {server} reseted')
+                if action == 'run':
+                    subprocess.run(data['servers'][service]['commands']['run'], shell=True, cwd=sub_dir_path)
+                    print(f'\t\tp: {service} started')
+                elif action == 'stop':
+                    subprocess.run(data['servers'][service]['commands']['stop'], shell=True, cwd=sub_dir_path)
+                    print(f'\t\tp: {service} stopped')
+                elif action == 'reset' or action == 'redeploy':
+                    subprocess.run(data['servers'][service]['commands']['run'], shell=True, cwd=sub_dir_path)
+                    subprocess.run(data['servers'][service]['commands']['stop'], shell=True, cwd=sub_dir_path)
+                    print(f'\t\tp: {service} reseted')
 
