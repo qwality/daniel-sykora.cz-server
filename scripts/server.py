@@ -87,7 +87,7 @@ else:
                 print(f'\t\t\tp: updating {server} vs: {args.services}')
 
                 if server not in args.services or args.services == []:
-                    break
+                    continue
 
                 if args.action == 'run':
                     subprocess.run(data['servers'][server]['commands']['run'], shell=True, cwd=sub_dir_path)
