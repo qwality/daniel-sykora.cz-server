@@ -40,14 +40,14 @@ servers_to_config, services_to_config, action = get_args()
 print(f'\tp: servers: {servers_to_config}, services: {services_to_config}, action: {action}')
 
 if servers_to_config and servers_to_config[0] == 'self':
-    data = load_cfg(os.path.join(ADMIN_PATH, CFG_FILE))
+    data = load_cfg(os.path.join(ADMIN_PATH, CFG_FILE))['servers']
 
     {
-        'update':   lambda: subprocess.run(data['servers']['this'] ['commands']['update'], shell=True, cwd=ADMIN_PATH),
-        'run':      lambda: subprocess.run(data['servers']['nginx']['commands']['start'], shell=True, cwd=ADMIN_PATH),
-        'stop':     lambda: subprocess.run(data['servers']['nginx']['commands']['stop'], shell=True, cwd=ADMIN_PATH),
-        'reset':    lambda: subprocess.run(data['servers']['nginx']['commands']['restart'], shell=True, cwd=ADMIN_PATH),
-        'redeploy': lambda: subprocess.run(data['servers']['this'] ['commands']['update'], shell=True, cwd=ADMIN_PATH)
+        'update':   lambda: subprocess.run(data['this'] ['commands']['update'], shell=True, cwd=ADMIN_PATH),
+        'run':      lambda: subprocess.run(data['nginx']['commands']['start'], shell=True, cwd=ADMIN_PATH),
+        'stop':     lambda: subprocess.run(data['nginx']['commands']['stop'], shell=True, cwd=ADMIN_PATH),
+        'reset':    lambda: subprocess.run(data['nginx']['commands']['restart'], shell=True, cwd=ADMIN_PATH),
+        'redeploy': lambda: subprocess.run(data['this'] ['commands']['update'], shell=True, cwd=ADMIN_PATH)
                             and subprocess.run(load_cfg(os.path.join(ADMIN_PATH, CFG_FILE))['servers']['nginx']['commands']['restart'], shell=True, cwd=ADMIN_PATH)
     }[action]()
 
@@ -56,22 +56,22 @@ else:
         web_path = os.path.join(WEBS_PATH, web)
 
         if CFG_FILE in os.listdir(web_path) and (not servers_to_config or web in servers_to_config):
-            data = load_cfg(os.path.join(web_path, CFG_FILE))
+            data = load_cfg(os.path.join(web_path, CFG_FILE))['servers']
 
             if action in ['update', 'redeploy']:
-                subprocess.run(data['servers']['this']['commands']['update'], shell=True, cwd=web_path)
-                data = load_cfg(os.path.join(web_path, CFG_FILE))
+                subprocess.run(data['this']['commands']['update'], shell=True, cwd=web_path)
+                data = load_cfg(os.path.join(web_path, CFG_FILE))['servers']
 
             for service in filter(lambda s: s != 'this' and not (services_to_config and service not in services_to_config) , data['servers']):
                 print(f'\t\t\tp: updating {service} vs: {services_to_config}')
 
                 {
-                    'run':      lambda: subprocess.run(     data['servers'][service]['commands']['run'], shell=True, cwd=web_path),
-                    'stop':     lambda: subprocess.run(     data['servers'][service]['commands']['stop'], shell=True, cwd=web_path),
-                    'reset':    lambda: subprocess.run(     data['servers'][service]['commands']['stop'], shell=True, cwd=web_path)
-                                        and subprocess.run( data['servers'][service]['commands']['run'], shell=True, cwd=web_path),
-                    'redeploy': lambda: subprocess.run(     data['servers'][service]['commands']['stop'], shell=True, cwd=web_path)
-                                        and subprocess.run( data['servers'][service]['commands']['run'], shell=True, cwd=web_path)
+                    'run':      lambda: subprocess.run(     data[service]['commands']['run'], shell=True, cwd=web_path),
+                    'stop':     lambda: subprocess.run(     data[service]['commands']['stop'], shell=True, cwd=web_path),
+                    'reset':    lambda: subprocess.run(     data[service]['commands']['stop'], shell=True, cwd=web_path)
+                                        and subprocess.run( data[service]['commands']['run'], shell=True, cwd=web_path),
+                    'redeploy': lambda: subprocess.run(     data[service]['commands']['stop'], shell=True, cwd=web_path)
+                                        and subprocess.run( data[service]['commands']['run'], shell=True, cwd=web_path)
                 }[action]()
                         
 
