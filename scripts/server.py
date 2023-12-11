@@ -75,6 +75,7 @@ else:
 
         if CFG_FILE in os.listdir(sub_dir_path) and (args.servers == [] or sub_dir_name in servers_to_config):
             print(f'\tp: updating {sub_dir_name}')
+
             with open(os.path.join(sub_dir_path, CFG_FILE), 'r') as cfg_file:
                 data = json.load(cfg_file)
 
@@ -83,6 +84,10 @@ else:
                 print(f'\t\tp: {sub_dir_name} updated')
 
             for server in filter(lambda i: i != 'this', data['servers']):
+
+                if server not in args.services or args.services == []:
+                    break
+
                 if args.action == 'run':
                     subprocess.run(data['servers'][server]['commands']['run'], shell=True, cwd=sub_dir_path)
                     print(f'\t\tp: {server} started')
