@@ -84,6 +84,7 @@ else:
                 print(f'\t\tp: {sub_dir_name} updated')
 
             for server in filter(lambda i: i != 'this', data['servers']):
+                print(f'\t\t\tp: updating {server} vs: {args.services}')
 
                 if server not in args.services or args.services == []:
                     break
