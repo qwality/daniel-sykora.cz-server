@@ -64,7 +64,7 @@ else:
 
         if CFG_FILE in os.listdir(web_path) and (not servers_to_config or web in servers_to_config):
             '''pokud je v ní konfigurační soubor a je to server, který chceme konfigurovat'''
-            
+
             data = load_cfg(os.path.join(web_path, CFG_FILE))['servers']
 
             if action in ['update', 'redeploy']:
@@ -81,6 +81,6 @@ else:
                                         and subprocess.run( data[service]['commands']['run'], shell=True, cwd=web_path),
                     'redeploy': lambda: subprocess.run(     data[service]['commands']['stop'], shell=True, cwd=web_path)
                                         and subprocess.run( data[service]['commands']['run'], shell=True, cwd=web_path)
-                }[action]()
+                }[action]() # selfcalling dict switch struct
                         
 
