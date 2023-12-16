@@ -7,7 +7,9 @@ WEBS_PATH = '/var/web'
 CFG_FILE = 'servers.json'
 ACTIONS = ['stop', 'update', 'run', 'reset', 'redeploy']
 
-def get_args():
+def get_args() -> tuple[list[str], list[str], str]:
+    '''Získá argumenty z příkazové řádky.
+    Vrací tuple obsahující jména serverů, služeb a akci.'''
     parser = argparse.ArgumentParser(description='Správa serverů.')
 
     server_group = parser.add_mutually_exclusive_group(required=True)
@@ -31,7 +33,8 @@ def get_args():
         next((action for action in ACTIONS if getattr(args, action)))
     )
 
-def load_cfg(path):
+def load_cfg( path: str ) -> dict:
+    '''Načte konfigurační soubor na dané cestě.'''
     with open(path, 'r') as cfg_file:
         return json.load(cfg_file)
 
@@ -40,6 +43,8 @@ servers_to_config, services_to_config, action = get_args()
 print(f'\tp: servers: {servers_to_config}, services: {services_to_config}, action: {action}')
 
 if servers_to_config and servers_to_config[0] == 'self':
+    '''Pokud se jedná o --self, tak se provede akce na tomto serveru.'''
+    
     data = load_cfg(os.path.join(ADMIN_PATH, CFG_FILE))['servers']
 
     {
@@ -49,13 +54,17 @@ if servers_to_config and servers_to_config[0] == 'self':
         'reset':    lambda: subprocess.run(data['nginx']['commands']['restart'], shell=True, cwd=ADMIN_PATH),
         'redeploy': lambda: subprocess.run(data['this'] ['commands']['update'], shell=True, cwd=ADMIN_PATH)
                             and subprocess.run(load_cfg(os.path.join(ADMIN_PATH, CFG_FILE))['servers']['nginx']['commands']['restart'], shell=True, cwd=ADMIN_PATH)
-    }[action]()
+    }[action]() # selfcalling dict switch struct
 
 else:
+    '''Pokud se jedna o servers_to_config'''
     for web in filter(lambda i: os.path.isdir(os.path.join(WEBS_PATH, i)), os.listdir(WEBS_PATH)):
+        '''pro kazdou slozku v /var/web která je složkou'''
         web_path = os.path.join(WEBS_PATH, web)
 
         if CFG_FILE in os.listdir(web_path) and (not servers_to_config or web in servers_to_config):
+            '''pokud je v ní konfigurační soubor a je to server, který chceme konfigurovat'''
+            
             data = load_cfg(os.path.join(web_path, CFG_FILE))['servers']
 
             if action in ['update', 'redeploy']:
