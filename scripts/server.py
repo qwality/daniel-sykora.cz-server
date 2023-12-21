@@ -71,7 +71,7 @@ else:
                 subprocess.run(data['this']['commands']['update'], shell=True, cwd=web_path)
                 data = load_cfg(os.path.join(web_path, CFG_FILE))['servers']
 
-            for service in filter(lambda s: s != 'this' and not (services_to_config and service not in services_to_config) , data['servers']):
+            for service in filter(lambda s: s != 'this' and not (services_to_config and service not in services_to_config) , data):
                 print(f'\t\t\tp: updating {service} vs: {services_to_config}')
 
                 {
