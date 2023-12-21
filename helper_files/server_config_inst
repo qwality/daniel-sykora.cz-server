@@ -12,3 +12,5 @@ sudo systemctl disable apache2
 sudo update-alternatives --install /usr/bin/python python /cesta/k/python3.12 1
 sudo update-alternatives --config python
 echo "alias pip='python -m pip'" >> ~/.bashrc
+
+#updated to Ubuntu 20.04
