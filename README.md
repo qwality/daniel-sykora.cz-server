@@ -6,7 +6,7 @@ Tento repozitář je určen pro správu serverů na VPS (Virtual Private Server)
 ## Instalace a konfigurace
 - Hlavní skript projektu je umístěn v `scripts/server`. Je doporučeno nastavit pro tento soubor spustitelné oprávnění pomocí příkazu `chmod +x`.
 - Pro snadné používání skriptu z jakéhokoli umístění je skript přidán do proměnné `PATH` v souboru `~/.bashrc` následujícím příkazem:
-  ```
+  ```bash
   export PATH="$PATH:/var/admin/scripts/"
   ```
 - Po této konfiguraci lze skript `server` spouštět z jakéhokoli umístění v systému.
