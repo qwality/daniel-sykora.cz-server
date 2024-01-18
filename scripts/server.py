@@ -71,16 +71,17 @@ else:
                 subprocess.run(data['this']['commands']['update'], shell=True, cwd=web_path)
                 data = load_cfg(os.path.join(web_path, CFG_FILE))['servers']
 
-            for service in filter(lambda s: s != 'this' and not (services_to_config and s not in services_to_config) , data):
-                print(f'\t\t\tp: updating {service} vs: {services_to_config}')
+            if action not in ['update']:
+                for service in filter(lambda s: s != 'this' and not (services_to_config and s not in services_to_config) , data):
+                    print(f'\t\t\tp: updating {service} vs: {services_to_config}')
 
-                {
-                    'run':      lambda: subprocess.run(     data[service]['commands']['run'], shell=True, cwd=web_path),
-                    'stop':     lambda: subprocess.run(     data[service]['commands']['stop'], shell=True, cwd=web_path),
-                    'reset':    lambda: subprocess.run(     data[service]['commands']['stop'], shell=True, cwd=web_path)
-                                        and subprocess.run( data[service]['commands']['run'], shell=True, cwd=web_path),
-                    'redeploy': lambda: subprocess.run(     data[service]['commands']['stop'], shell=True, cwd=web_path)
-                                        and subprocess.run( data[service]['commands']['run'], shell=True, cwd=web_path)
-                }[action]() # selfcalling dict switch struct
+                    {
+                        'run':      lambda: subprocess.run(     data[service]['commands']['run'], shell=True, cwd=web_path),
+                        'stop':     lambda: subprocess.run(     data[service]['commands']['stop'], shell=True, cwd=web_path),
+                        'reset':    lambda: subprocess.run(     data[service]['commands']['stop'], shell=True, cwd=web_path)
+                                            and subprocess.run( data[service]['commands']['run'], shell=True, cwd=web_path),
+                        'redeploy': lambda: subprocess.run(     data[service]['commands']['stop'], shell=True, cwd=web_path)
+                                            and subprocess.run( data[service]['commands']['run'], shell=True, cwd=web_path)
+                    }[action]() # selfcalling dict switch struct
                         
 
