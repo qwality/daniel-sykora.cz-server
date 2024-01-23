@@ -229,7 +229,7 @@ class BodyParamType(click.ParamType):
 
 def print_commands(path: str, long_command: str):
     commands = long_command.split('&&')
-    commands = [c.strip() for c in command]
+    commands = [c.strip() for c in commands]
     for command in commands:
         click.secho(f'{os.getlogin()}@{socket.gethostname()}:{path}# {command}', fg='yellow', dim=True)
 
