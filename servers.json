@@ -2,7 +2,7 @@
     "servers": {
         "this": {
             "commands": {
-                "update": "git pull && cp nginx/nginx.conf /etc/nginx/nginx.conf"
+                "update": "git stash && git pull && cp nginx/nginx.conf /etc/nginx/nginx.conf"
             }
         },
         "nginx": {
