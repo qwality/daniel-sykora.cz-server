@@ -1,0 +1,2 @@
+ADMIN_PATH: '/var/admin'
+WEBS_PATH: '/var/web'

@@ -1,0 +1,344 @@
+#!/usr/bin/env python3
+
+# chmod +x qwality-server
+# eval "$(_QWALITY_SERVER_COMPLETE=bash_source ./qwality-server)"
+
+SCRIPT_NAME = __file__.split('/')[-1]
+SCRIPT_NAME_UNDERSCORE_UPPER = SCRIPT_NAME.replace('-', '_').upper()
+
+ADMIN_PATH = ''
+WEBS_PATH = ''
+CFG_FORMAT = 'yaml'
+CFG_FILE = 'server'
+ACTIONS = ['stop', 'update', 'run', 'reset', 'redeploy']
+SEP = '/'
+
+import click, json, os, subprocess, yaml
+from typing import Any, List, Dict, Iterable, Tuple
+from dataclasses import dataclass
+from itertools import takewhile, chain
+from functools import reduce
+
+from click.core import Context, Parameter
+from click.shell_completion import CompletionItem
+
+if os.path.exists(os.path.join(ADMIN_PATH, SCRIPT_NAME + '.config.yaml')):
+    with open(os.path.join(ADMIN_PATH, SCRIPT_NAME + '.config.yaml'), 'r') as config_file:
+        try:
+            config = yaml.safe_load(config_file)
+            ADMIN_PATH = config.get('ADMIN_PATH', ADMIN_PATH)
+            WEBS_PATH = config.get('WEBS_PATH', WEBS_PATH)
+            CFG_FORMAT = config.get('CFG_FORMAT', CFG_FORMAT)
+            CFG_FILE = config.get('CFG_FILE', CFG_FILE)
+            ACTIONS = config.get('ACTIONS', ACTIONS)
+            SEP = config.get('SEP', SEP)
+        except yaml.YAMLError:
+            pass
+
+INSTALL_SCRIPT = f'''
+chmod +x {SCRIPT_NAME}
+eval "$(_{SCRIPT_NAME_UNDERSCORE_UPPER}_COMPLETE=bash_source ./{SCRIPT_NAME})"
+echo 'export PATH="{ADMIN_PATH}:$PATH"' >> ~/.bashrc && source ~/.bashrc
+echo "bash: installed"
+'''
+
+@dataclass
+class Action:
+    name: str
+    command: str
+
+@dataclass
+class Service:
+    name: str
+    actions: List[Action]
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+    
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, Service) and self.name == o.name
+
+    def action(self, name: str) -> Action:
+        default_action = Action('default', f'echo "No action {name} for service {self.name}"')
+        return next(filter(lambda a: a.name == name, self.actions), default_action)
+
+@dataclass
+class Server:
+    name: str
+    actions: List[Action]
+    services: List[Service]
+
+    def action(self, name: str) -> Action:
+        default_action = Action('default', f'echo "No action {name} for server {self.name}"')
+        return next(filter(lambda a: a.name == name, self.actions), default_action)
+
+    def get_path(self, webs_path: str) -> str:
+        return os.path.join(webs_path, self.name)
+
+    @classmethod
+    def _from_nested_dict(cls, data: Dict, name:str) -> 'Server':
+        
+        actions_dict = dict(data.get('this', {}) | data.get('self', {})).get('commands', {}) | {}
+
+        actions = list(map(lambda item: Action(item[0], item[1]), actions_dict.items()))
+        
+        services = list(map(
+            lambda item: Service(
+                name=item[0],
+                actions=[
+                    Action(action[0], action[1])
+                    for action in dict(item[1].get('commands', {})).items()
+                    ]
+                    ),
+            filter(
+                lambda item: item[0] not in ['this', 'self'],
+                data.items()
+                )
+                ))
+        
+        return cls(name=name, actions=actions, services=services)
+
+    @classmethod
+    def from_json(cls, path_prefix: str, name: str, cfg_file: str) -> 'Server':
+        with open(os.path.join(path_prefix, name, cfg_file), 'r') as cfg_file:
+            try:
+                data = json.load(cfg_file).get('servers', {})
+                return cls._from_nested_dict(data, name)
+            except json.decoder.JSONDecodeError:
+                return cls._from_nested_dict({}, name)
+
+    @classmethod
+    def from_yaml(cls, path_prefix: str, name: str, cfg_file: str) -> 'Server':
+        with open(os.path.join(path_prefix, name, cfg_file), 'r') as cfg_file:
+            try:
+                data = yaml.safe_load(cfg_file).get('servers', {})
+                return cls._from_nested_dict(data, name)
+            except yaml.YAMLError:
+                return cls._from_nested_dict({}, name)
+
+    @classmethod
+    def from_globals(cls, path_prefix: str, name: str, cfg_file: str, cfg_format: str) -> 'Server':
+        if cfg_format == 'json':
+            return cls.from_json(path_prefix, name, cfg_file)
+        elif cfg_format == 'yaml':
+            return cls.from_yaml(path_prefix, name, cfg_file)
+        else:
+            raise Exception(f'Unknown format: {cfg_format}')
+
+    @staticmethod
+    def is_server(path: str, cfg_file: str) -> bool:
+        return os.path.isdir(path) and cfg_file in os.listdir(path)
+
+def get_self_server(admin_path: str, cfg_file: str, cfg_format: str) -> Server:
+    return Server.from_globals(admin_path, '', cfg_file, cfg_format)
+
+class ActionParamType(click.ParamType):
+    name = 'action'
+
+    def get_metavar(self, param: Parameter) -> str | None:
+        return ' | '.join(self.actions)
+    
+    def __init__(self, actions) -> None:
+        self.actions = actions
+
+    def convert(self, value, param, ctx):
+        if value not in self.actions:
+            self.fail(f'Invalid action: {value}', param, ctx)
+        return value
+    
+    def shell_complete(self, ctx: Context, param: Parameter, incomplete: str) -> List[CompletionItem]:
+        return [CompletionItem(a) for a in self.actions if a.startswith(incomplete)]
+
+def iterable_partition(sep, iterable: Iterable) -> Tuple[List, List]:
+    iterable = iter(iterable)
+    return list(takewhile(lambda i: i != sep, iterable)), list(iterable)
+
+def get_common_services(servers: List[Server]) -> List[Service]:
+    services: List[List[Service]] = [server.services for server in servers]
+    if len(services) == 0:
+        return []
+    elif len(services) == 1:
+        return services[0]
+    else:
+        return list(reduce(lambda a, b: set(a) & set(b), services))
+    
+def get_possible_servers(webs_path: str, cfg_file: str, cfg_format: str) -> List[Server]:
+    dirs = [dir for dir in os.listdir(webs_path) if os.path.isdir(os.path.join(webs_path, dir))]
+    server_paths = [server for server in dirs if cfg_file in os.listdir(os.path.join(webs_path, server))]
+    return [Server.from_globals(webs_path, server, cfg_file, cfg_format) for server in server_paths]
+
+class BodyParamType(click.ParamType):
+    name = 'body'
+
+    def get_metavar(self, param: Parameter) -> str | None:
+        return ' [ *SERVERS | all | +self ] / [ *SERVICES | all ] '
+
+    def __init__(self, sep: str) -> None:
+        self.servers = None# = get_possible_servers(webs_path, cfg_file)
+        self.sep = sep
+
+        self.self_server = None #= Server.from_json(admin_path, '', cfg_file)
+
+    def parse_body(self, _passed_action: str,  _passed_servers: List[str], _passed_services: List[str]) -> Tuple[List[str], List[str]]:
+        def handle_all(_possible: List[str], _passed: List[str]) -> List[str]:
+            res = _possible if 'all' not in _passed else []
+            res += ['all'] if not _passed else []
+            return res
+        
+        _possible_servers = list(map(lambda i: i.name, self.servers))
+         
+        servers_options = _possible_servers
+        servers_options = ['self'] + handle_all(_possible_servers, _passed_servers)
+        servers_options += [self.sep] if _passed_servers and _passed_action not in ['update'] else []
+
+        _possible_and_passed_servers = [s for s in self.servers if s.name in _passed_servers]
+        _possible_and_passed_servers += [self.self_server] if 'self' in _passed_servers else []
+        _possible_services = list(map(lambda s: s.name, get_common_services(_possible_and_passed_servers)))
+
+        services_options = handle_all(_possible_services, _passed_services) if _passed_action not in ['update'] else []
+
+        return servers_options, services_options
+    
+    def handle_globals(self, ctx: Context):
+        if not self.servers: self.servers = get_possible_servers(
+            ctx.params.get('webs_path', WEBS_PATH),
+            ctx.params.get('cfg_file', CFG_FILE) + '.' + ctx.params.get('cfg_format', CFG_FORMAT),
+            ctx.params.get('cfg_format', CFG_FORMAT)
+            )
+        if not self.self_server: self.self_server = get_self_server(
+            ctx.params.get('admin_path', ADMIN_PATH),
+            ctx.params.get('cfg_file', CFG_FILE) + '.' + ctx.params.get('cfg_format', CFG_FORMAT),
+            ctx.params.get('cfg_format', CFG_FORMAT)
+            )
+
+    def shell_complete(self, ctx: Context, param: Parameter, incomplete: str) -> List[CompletionItem]:
+        self.handle_globals(ctx)
+
+        _passsed_action = ctx.params['action']
+        _passed_body = ctx.params.get('body', [])
+        _passed_body = _passed_body if _passed_body else []
+
+        _passed_servers, _passed_services = iterable_partition(self.sep, _passed_body)
+
+        servers_options, services_options = self.parse_body(_passsed_action, _passed_servers, _passed_services)
+
+        if self.sep not in _passed_body:
+            return [CompletionItem(o) for o in servers_options if o.startswith(incomplete) and o not in _passed_servers]
+        else:
+            return [CompletionItem(o) for o in services_options if o.startswith(incomplete) and o not in _passed_services]
+
+def perform_action(action: str, _servers: List[str], _services: List[str], options: Dict[str, Any]) -> None:
+    def get_params(action: str, _servers: List[str], _services: List[str]) -> Tuple[str, List[Server], bool]:
+        self_server = 'self' in _servers
+        if self_server: _servers.remove('self')
+
+        servers: List[Server] = []
+        servers += [get_self_server(options['admin-path'], options['cfg-file'], options['cfg-format'])] if self_server else []
+        servers += get_possible_servers(options['webs-path'], options['cfg-file'], options['cfg-format']) if 'all' in _servers else [
+            Server.from_globals(options['webs-path'], server, options['cfg-file'], options['cfg-format']) for server in _servers if Server.is_server(
+                os.path.join(options['webs-path'], server), options['cfg-file'])]
+
+        all_services = 'all' in _services or not _services
+
+        return action, servers, all_services
+
+    action, servers, all_services = get_params(action, _servers, _services)
+
+    for server in servers:
+        click.secho(server.name, fg='green')
+        if action in ['update', 'redeploy']:
+            subprocess.run(
+                server.action('update').command,
+                shell=True,
+                cwd=server.get_path(options['webs-path'])
+                )
+        if action not in ['update']:
+            for service in server.services:
+                if service.name in _services or all_services:
+                    click.secho(f'{server.name} > {service.name}', fg='green')
+                    # 'stop', 'run', 'reset', 'redeploy'
+                    {
+                        'run': lambda: subprocess.run(
+                            service.action('run').command,
+                            shell=True,
+                            cwd=server.get_path(options['webs-path'])
+                            ),
+                        'stop': lambda: subprocess.run(
+                            service.action('stop').command,
+                            shell=True,
+                            cwd=server.get_path(options['webs-path'])
+                            ),
+                        'reset': lambda: (
+                            subprocess.run(
+                                service.action('stop').command,
+                                shell=True,
+                                cwd=server.get_path(options['webs-path'])
+                                ),
+                            subprocess.run(
+                                service.action('run').command,
+                                shell=True,
+                                cwd=server.get_path(options['webs-path'])
+                                )
+                        ),
+                        'redeploy': lambda: (
+                            subprocess.run(
+                                service.action('stop').command,
+                                shell=True,
+                                cwd=server.get_path(options['webs-path'])
+                                ),
+                            subprocess.run(
+                                service.action('run').command,
+                                shell=True,
+                                cwd=server.get_path(options['webs-path'])
+                                )
+                        ),
+                    }[action]()
+
+@click.command()
+@click.argument('action', type=ActionParamType(ACTIONS), required=False)
+@click.argument('body', nargs=-1, type=BodyParamType(SEP), required=False)
+@click.option('--cfg-file', '-cfg', default=CFG_FILE)
+@click.option('--cfg-format', '-format', default=CFG_FORMAT, type=click.Choice(['json', 'yaml']))
+@click.option('--webs-path', '-webs', default=WEBS_PATH, type=click.Path(exists=True))
+@click.option('--admin-path', '-admin', default=ADMIN_PATH, type=click.Path(exists=True))
+@click.option('--verbose', '-v', is_flag=True)
+@click.option('--install', is_flag=True)
+def get_params(action, body, cfg_file, webs_path, admin_path, cfg_format, verbose, install):
+    
+    servers, services = iterable_partition(SEP, body)
+
+    options = {
+        'cfg-file': '.'.join([cfg_file, cfg_format]),
+        'cfg-format': cfg_format,
+        'webs-path': webs_path,
+        'admin-path': admin_path,
+    }
+
+    if install:
+        click.secho(INSTALL_SCRIPT, fg='yellow')
+        try:
+            subprocess.run(
+                INSTALL_SCRIPT,
+                shell=True,
+                cwd=options['admin-path']
+            ).check_returncode()
+        except subprocess.CalledProcessError:
+            click.secho('\ninstallation failed copy the yellow commands and execute them 1 by 1\n', fg='red')
+        return
+    
+    click.secho(f'{action} {servers} {services}', fg='yellow')
+    if verbose: click.secho(
+        f'''options:
+        [ 
+            -cfg: {options['cfg-file']},
+            -format: {options['cfg-format']},
+            -webs: {options['webs-path']},
+            -admin: {options['admin-path']},
+        ]''',
+        fg='yellow')
+
+    perform_action(action, servers, services, options)
+
+if __name__ == '__main__':
+    get_params()
+    
