@@ -256,11 +256,17 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
         if action in ['update', 'redeploy']:
             path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
             print_commands(path, server.action('update').command)
-            subprocess.run(
+            result = subprocess.run(
                 server.action('update').command,
                 shell=True,
-                cwd=path
+                cwd=path,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
                 )
+            
+            click.secho(result.stdout, fg='green')
+            click.secho(result.stderr, fg='red')
         if action not in ['update']:
             for service in server.services:
                 if service.name in _services or all_services:
