@@ -277,25 +277,41 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
                     if action in ['run', 'stop']:
                         print_commands(path, service.action(action).command)
                         
-                        subprocess.run(
+                        result = subprocess.run(
                             service.action(action).command,
                             shell=True,
-                            cwd=path
+                            cwd=path,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True
                             )
+                        
+                        click.secho(result.stdout, fg='green')
+                        click.secho(result.stderr, fg='red')
                     elif action in ['reset', 'redeploy']:
                         print_commands(path, service.action('stop').command)
                         print_commands(path, service.action('run').command)
                         
-                        subprocess.run(
+                        result = subprocess.run(
                             service.action('stop').command,
                             shell=True,
-                            cwd=path
+                            cwd=path,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True
                             )
-                        subprocess.run(
+                        click.secho(result.stdout, fg='green')
+                        click.secho(result.stderr, fg='red')
+                        result = subprocess.run(
                             service.action('run').command,
                             shell=True,
-                            cwd=path
+                            cwd=path,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True
                             )
+                        click.secho(result.stdout, fg='green')
+                        click.secho(result.stderr, fg='red')
 
                     # {
                     #     'run': lambda: subprocess.run(
