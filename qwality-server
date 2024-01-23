@@ -247,6 +247,7 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
     for server in servers:
         click.secho(server.name, fg='green')
         if action in ['update', 'redeploy']:
+            click.secho(f"{server.action('update').command} > update", fg='yellow', dim=True)
             subprocess.run(
                 server.action('update').command,
                 shell=True,
