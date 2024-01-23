@@ -290,7 +290,7 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
                         click.secho(result.stderr, fg='red')
                     elif action in ['reset', 'redeploy']:
                         print_commands(path, service.action('stop').command)
-                        print_commands(path, service.action('run').command)
+                        
                         
                         result = subprocess.run(
                             service.action('stop').command,
@@ -302,6 +302,8 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
                             )
                         click.secho(result.stdout, fg='green')
                         click.secho(result.stderr, fg='red')
+
+                        print_commands(path, service.action('run').command)
                         result = subprocess.run(
                             service.action('run').command,
                             shell=True,
