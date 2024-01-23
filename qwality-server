@@ -13,7 +13,7 @@ CFG_FILE = 'server'
 ACTIONS = ['stop', 'update', 'run', 'reset', 'redeploy']
 SEP = '/'
 
-import click, json, os, subprocess, yaml
+import click, json, os, subprocess, yaml, socket
 from typing import Any, List, Dict, Iterable, Tuple
 from dataclasses import dataclass
 from itertools import takewhile, chain
@@ -249,7 +249,7 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
         if action in ['update', 'redeploy']:
             path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
 
-            click.secho(f"{path}# {server.action('update').command}", fg='yellow', dim=True)
+            click.secho(f"{os.getlogin()}@{socket.gethostname()}:{path}# {server.action('update').command}", fg='yellow', dim=True)
             subprocess.run(
                 server.action('update').command,
                 shell=True,
