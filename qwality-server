@@ -37,7 +37,7 @@ if os.path.exists(os.path.join(ADMIN_PATH, SCRIPT_NAME + '.config.yaml')):
 
 INSTALL_SCRIPT = f'''
 chmod +x {SCRIPT_NAME}
-eval "$(_{SCRIPT_NAME_UNDERSCORE_UPPER}_COMPLETE=bash_source ./{SCRIPT_NAME})"
+echo 'eval "$(_{SCRIPT_NAME_UNDERSCORE_UPPER}_COMPLETE=bash_source ./{SCRIPT_NAME})"' >> ~/.bashrc && source ~/.bashrc
 echo 'export PATH="{ADMIN_PATH}:$PATH"' >> ~/.bashrc && source ~/.bashrc
 echo "bash: installed"
 '''
