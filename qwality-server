@@ -247,11 +247,13 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
     for server in servers:
         click.secho(server.name, fg='green')
         if action in ['update', 'redeploy']:
-            click.secho(f"{server.get_path(options['admin-path'])}# {server.action('update').command}", fg='yellow', dim=True)
+            path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
+
+            click.secho(f"{path}# {server.action('update').command}", fg='yellow', dim=True)
             subprocess.run(
                 server.action('update').command,
                 shell=True,
-                cwd=server.get_path(options['admin-path'])
+                cwd=path
                 )
         if action not in ['update']:
             for service in server.services:
