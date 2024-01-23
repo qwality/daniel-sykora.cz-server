@@ -6,7 +6,7 @@
 SCRIPT_NAME = __file__.split('/')[-1]
 SCRIPT_NAME_UNDERSCORE_UPPER = SCRIPT_NAME.replace('-', '_').upper()
 
-ADMIN_PATH = ''
+ADMIN_PATH = '/var/admin'
 WEBS_PATH = ''
 CFG_FORMAT = 'yaml'
 CFG_FILE = 'server'
@@ -290,8 +290,6 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
                         click.secho(result.stderr, fg='red')
                     elif action in ['reset', 'redeploy']:
                         print_commands(path, service.action('stop').command)
-                        
-                        
                         result = subprocess.run(
                             service.action('stop').command,
                             shell=True,
