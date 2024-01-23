@@ -227,6 +227,12 @@ class BodyParamType(click.ParamType):
         else:
             return [CompletionItem(o) for o in services_options if o.startswith(incomplete) and o not in _passed_services]
 
+def print_commands(path: str, long_command: str):
+    commands = long_command.split('&&')
+    commands = [c.strip() for c in command]
+    for command in commands:
+        click.secho(f'{os.getlogin()}@{socket.gethostname()}:{path}# {command}', fg='yellow', dim=True)
+
 def perform_action(action: str, _servers: List[str], _services: List[str], options: Dict[str, Any]) -> None:
     def get_params(action: str, _servers: List[str], _services: List[str]) -> Tuple[str, List[Server], bool]:
         self_server = 'self' in _servers
@@ -248,12 +254,12 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
         click.secho(server.name, fg='green')
         if action in ['update', 'redeploy']:
             path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
-            command = server.action('update').command.split('&&')
-            command = [c.strip() for c in command]
+            # command = server.action('update').command.split('&&')
+            # command = [c.strip() for c in command]
 
-            for c in command:
-                click.secho(f"{os.getlogin()}@{socket.gethostname()}:{path}# {c}", fg='yellow', dim=True)
-            
+            # for c in command:
+            #     click.secho(f"{os.getlogin()}@{socket.gethostname()}:{path}# {c}", fg='yellow', dim=True)
+            print_commands(path, server.action('update').command)
             click.echo()
             subprocess.run(
                 server.action('update').command,
