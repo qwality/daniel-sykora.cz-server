@@ -232,6 +232,7 @@ def print_commands(path: str, long_command: str):
     commands = [c.strip() for c in commands]
     for command in commands:
         click.secho(f'{os.getlogin()}@{socket.gethostname()}:{path}# {command}', fg='yellow', dim=True)
+    click.echo()
 
 def perform_action(action: str, _servers: List[str], _services: List[str], options: Dict[str, Any]) -> None:
     def get_params(action: str, _servers: List[str], _services: List[str]) -> Tuple[str, List[Server], bool]:
@@ -254,13 +255,7 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
         click.secho(server.name, fg='green')
         if action in ['update', 'redeploy']:
             path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
-            # command = server.action('update').command.split('&&')
-            # command = [c.strip() for c in command]
-
-            # for c in command:
-            #     click.secho(f"{os.getlogin()}@{socket.gethostname()}:{path}# {c}", fg='yellow', dim=True)
             print_commands(path, server.action('update').command)
-            click.echo()
             subprocess.run(
                 server.action('update').command,
                 shell=True,
@@ -269,44 +264,69 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
         if action not in ['update']:
             for service in server.services:
                 if service.name in _services or all_services:
+                    path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
                     click.secho(f'{server.name} > {service.name}', fg='green')
                     # 'stop', 'run', 'reset', 'redeploy'
-                    {
-                        'run': lambda: subprocess.run(
-                            service.action('run').command,
+
+                    if action in ['run', 'stop']:
+                        print_commands(path, service.action(action).command)
+                        
+                        subprocess.run(
+                            service.action(action).command,
                             shell=True,
-                            cwd=server.get_path(options['webs-path'])
-                            ),
-                        'stop': lambda: subprocess.run(
+                            cwd=path
+                            )
+                    elif action in ['reset', 'redeploy']:
+                        print_commands(path, service.action('stop').command)
+                        print_commands(path, service.action('run').command)
+                        
+                        subprocess.run(
                             service.action('stop').command,
                             shell=True,
-                            cwd=server.get_path(options['webs-path'])
-                            ),
-                        'reset': lambda: (
-                            subprocess.run(
-                                service.action('stop').command,
-                                shell=True,
-                                cwd=server.get_path(options['webs-path'])
-                                ),
-                            subprocess.run(
-                                service.action('run').command,
-                                shell=True,
-                                cwd=server.get_path(options['webs-path'])
-                                )
-                        ),
-                        'redeploy': lambda: (
-                            subprocess.run(
-                                service.action('stop').command,
-                                shell=True,
-                                cwd=server.get_path(options['webs-path'])
-                                ),
-                            subprocess.run(
-                                service.action('run').command,
-                                shell=True,
-                                cwd=server.get_path(options['webs-path'])
-                                )
-                        ),
-                    }[action]()
+                            cwd=path
+                            )
+                        subprocess.run(
+                            service.action('run').command,
+                            shell=True,
+                            cwd=path
+                            )
+
+                    # {
+                    #     'run': lambda: subprocess.run(
+                    #         service.action('run').command,
+                    #         shell=True,
+                    #         cwd=path
+                    #         ),
+                    #     'stop': lambda: subprocess.run(
+                    #         service.action('stop').command,
+                    #         shell=True,
+                    #         cwd=path
+                    #         ),
+                    #     'reset': lambda: (
+                    #         subprocess.run(
+                    #             service.action('stop').command,
+                    #             shell=True,
+                    #             cwd=path
+                    #             ),
+                    #         subprocess.run(
+                    #             service.action('run').command,
+                    #             shell=True,
+                    #             cwd=path
+                    #             )
+                    #     ),
+                    #     'redeploy': lambda: (
+                    #         subprocess.run(
+                    #             service.action('stop').command,
+                    #             shell=True,
+                    #             cwd=path
+                    #             ),
+                    #         subprocess.run(
+                    #             service.action('run').command,
+                    #             shell=True,
+                    #             cwd=path
+                    #             )
+                    #     ),
+                    # }[action]()
 
 @click.command()
 @click.argument('action', type=ActionParamType(ACTIONS), required=False)
