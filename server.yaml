@@ -1,0 +1,9 @@
+servers:
+  this:
+    commands:
+      update: "git pull && cp nginx/nginx.conf /etc/nginx/nginx.conf"
+  nginx:
+    commands:
+      start: nginx
+      stop: "nginx -s stop"
+      restart: "nginx -s reload"
