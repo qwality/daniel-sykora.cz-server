@@ -10,7 +10,7 @@ ADMIN_PATH = '/var/admin'
 WEBS_PATH = ''
 CFG_FORMAT = 'yaml'
 CFG_FILE = 'server'
-ACTIONS = ['stop', 'update', 'run', 'reset', 'redeploy', 'cd', 'status']
+ACTIONS = ['stop', 'update', 'run', 'reset', 'redeploy', 'path', 'status']
 SEP = '/'
 
 import click, json, os, subprocess, yaml, socket
@@ -181,21 +181,28 @@ class BodyParamType(click.ParamType):
 
     def parse_body(self, _passed_action: str,  _passed_servers: List[str], _passed_services: List[str]) -> Tuple[List[str], List[str]]:
         def handle_all(_possible: List[str], _passed: List[str]) -> List[str]:
+            '''adds \'all\' to the list if it makes sense'''
             res = _possible if 'all' not in _passed else []
             res += ['all'] if not _passed else []
             return res
+        
+        def action_servers_services(_action: str) -> bool:
+            return _action in ['run', 'stop', 'reset', 'redeploy']
+
         
         _possible_servers = list(map(lambda i: i.name, self.servers))
          
         servers_options = _possible_servers
         servers_options = ['self'] + handle_all(_possible_servers, _passed_servers)
-        servers_options += [self.sep] if _passed_servers and _passed_action not in ['update'] else []
+        # servers_options += [self.sep] if _passed_servers and _passed_action not in ['update'] else []
+        servers_options += [self.sep] if _passed_servers and action_servers_services(_passed_action) else []
 
         _possible_and_passed_servers = [s for s in self.servers if s.name in _passed_servers]
         _possible_and_passed_servers += [self.self_server] if 'self' in _passed_servers else []
         _possible_services = list(map(lambda s: s.name, get_common_services(_possible_and_passed_servers)))
 
-        services_options = handle_all(_possible_services, _passed_services) if _passed_action not in ['update'] else []
+        # services_options = handle_all(_possible_services, _passed_services) if _passed_action not in ['update'] else []
+        services_options = handle_all(_possible_services, _passed_services) if action_servers_services(_passed_action) else []
 
         return servers_options, services_options
     
@@ -323,9 +330,8 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
                             shell=True,
                             cwd=path
                             )
-                    elif action in ['cd']:
-                        click.secho( f'cd {path}', fg='yellow')
-                        subprocess.run(f'cd {path}', shell=True)
+                    elif action in ['path']:
+                        click.secho( f'cd {path}', fg='yellow', dim=True)
 
 
 @click.command()
