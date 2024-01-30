@@ -6,4 +6,4 @@ servers:
     commands:
       run: nginx
       stop: "nginx -s stop"
-      restart: "nginx -s reload"
+      reset: "nginx -s reload"
