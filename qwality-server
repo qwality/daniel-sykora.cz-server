@@ -324,7 +324,7 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
                             cwd=path
                             )
                     elif action in ['cd']:
-                        subprocess.run(['cd', path])
+                        subprocess.run("cd " + path, shell=True)
 
 
 @click.command()
