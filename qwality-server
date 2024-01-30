@@ -271,8 +271,9 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
 
     for server in servers:
         click.secho(server.name, fg='green')
+        path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
         if action in ['update', 'redeploy']:
-            path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
+            # path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
             print_commands(path, server.action('update').command)
             result = subprocess.run(
                 server.action('update').command,
@@ -285,6 +286,15 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
             
             click.secho(result.stdout, fg='green')
             click.secho(result.stderr, fg='red')
+        elif action in ['status']:
+            subprocess.run(
+                server.action('status').command,
+                shell=True,
+                cwd=path
+                )
+        elif action in ['path']:
+            # path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
+            click.secho( f'cd {path}', fg='yellow', dim=True)
         if action not in ['update']:
             for service in server.services:
                 if service.name in _services or all_services:
@@ -335,14 +345,7 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
                                 shell=True,
                                 cwd=path
                                 )
-                    elif action in ['status']:
-                        subprocess.run(
-                            service.action('status').command,
-                            shell=True,
-                            cwd=path
-                            )
-                    elif action in ['path']:
-                        click.secho( f'cd {path}', fg='yellow', dim=True)
+                    
 
 
 @click.command()
