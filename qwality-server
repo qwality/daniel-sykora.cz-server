@@ -295,7 +295,7 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
         elif action in ['path']:
             # path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
             click.secho( f'cd {path}', fg='yellow', dim=True)
-        if action not in ['update']:
+        if action not in ['update', 'status', 'path']:
             for service in server.services:
                 if service.name in _services or all_services:
                     path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
