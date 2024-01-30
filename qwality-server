@@ -10,7 +10,7 @@ ADMIN_PATH = '/var/admin'
 WEBS_PATH = ''
 CFG_FORMAT = 'yaml'
 CFG_FILE = 'server'
-ACTIONS = ['stop', 'update', 'run', 'reset', 'redeploy']
+ACTIONS = ['stop', 'update', 'run', 'reset', 'redeploy', 'cd', 'status']
 SEP = '/'
 
 import click, json, os, subprocess, yaml, socket
@@ -290,6 +290,7 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
                         click.secho(result.stderr, fg='red')
                     elif action in ['reset', 'redeploy']:
                         print_commands(path, service.action('stop').command)
+
                         result = subprocess.run(
                             service.action('stop').command,
                             shell=True,
@@ -298,6 +299,7 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
                             stderr=subprocess.PIPE,
                             text=True
                             )
+                        
                         click.secho(result.stdout, fg='green')
                         click.secho(result.stderr, fg='red')
 
@@ -307,43 +309,15 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
                             shell=True,
                             cwd=path
                             )
+                    elif action in ['status']:
+                        subprocess.run(
+                            service.action('status').command,
+                            shell=True,
+                            cwd=path
+                            )
+                    elif action in ['cd']:
+                        subprocess.run(['cd', path])
 
-                    # {
-                    #     'run': lambda: subprocess.run(
-                    #         service.action('run').command,
-                    #         shell=True,
-                    #         cwd=path
-                    #         ),
-                    #     'stop': lambda: subprocess.run(
-                    #         service.action('stop').command,
-                    #         shell=True,
-                    #         cwd=path
-                    #         ),
-                    #     'reset': lambda: (
-                    #         subprocess.run(
-                    #             service.action('stop').command,
-                    #             shell=True,
-                    #             cwd=path
-                    #             ),
-                    #         subprocess.run(
-                    #             service.action('run').command,
-                    #             shell=True,
-                    #             cwd=path
-                    #             )
-                    #     ),
-                    #     'redeploy': lambda: (
-                    #         subprocess.run(
-                    #             service.action('stop').command,
-                    #             shell=True,
-                    #             cwd=path
-                    #             ),
-                    #         subprocess.run(
-                    #             service.action('run').command,
-                    #             shell=True,
-                    #             cwd=path
-                    #             )
-                    #     ),
-                    # }[action]()
 
 @click.command()
 @click.argument('action', type=ActionParamType(ACTIONS), required=False)
