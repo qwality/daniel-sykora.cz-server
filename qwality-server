@@ -34,6 +34,7 @@ if os.path.exists(os.path.join(ADMIN_PATH, SCRIPT_NAME + '.config.yaml')):
             SEP = config.get('SEP', SEP)
         except yaml.YAMLError:
             pass
+f'''pri spusteni se nacte konfigurace z {ADMIN_PATH}/{SCRIPT_NAME}.config.yaml pokud existuje'''
 
 INSTALL_SCRIPT = f'''
 chmod +x {SCRIPT_NAME}
@@ -69,14 +70,17 @@ class Server:
     services: List[Service]
 
     def action(self, name: str) -> Action:
+        '''returns action with given name or default action if not found'''
         default_action = Action('default', f'echo "No action {name} for server {self.name}"')
         return next(filter(lambda a: a.name == name, self.actions), default_action)
 
     def get_path(self, webs_path: str) -> str:
+        '''returns path to server'''
         return os.path.join(webs_path, self.name)
 
     @classmethod
     def _from_nested_dict(cls, data: Dict, name:str) -> 'Server':
+        '''creates server from nested dict'''
         
         actions_dict = dict(data.get('this', {}) | data.get('self', {})).get('commands', {}) | {}
 
@@ -100,6 +104,7 @@ class Server:
 
     @classmethod
     def from_json(cls, path_prefix: str, name: str, cfg_file: str) -> 'Server':
+        '''creates server from json file'''
         with open(os.path.join(path_prefix, name, cfg_file), 'r') as cfg_file:
             try:
                 data = json.load(cfg_file).get('servers', {})
@@ -109,6 +114,7 @@ class Server:
 
     @classmethod
     def from_yaml(cls, path_prefix: str, name: str, cfg_file: str) -> 'Server':
+        '''creates server from yaml file'''
         with open(os.path.join(path_prefix, name, cfg_file), 'r') as cfg_file:
             try:
                 data = yaml.safe_load(cfg_file).get('servers', {})
@@ -118,6 +124,7 @@ class Server:
 
     @classmethod
     def from_globals(cls, path_prefix: str, name: str, cfg_file: str, cfg_format: str) -> 'Server':
+        '''creates server from given format'''
         if cfg_format == 'json':
             return cls.from_json(path_prefix, name, cfg_file)
         elif cfg_format == 'yaml':
@@ -130,6 +137,7 @@ class Server:
         return os.path.isdir(path) and cfg_file in os.listdir(path)
 
 def get_self_server(admin_path: str, cfg_file: str, cfg_format: str) -> Server:
+    '''creates admin server from given format'''
     return Server.from_globals(admin_path, '', cfg_file, cfg_format)
 
 class ActionParamType(click.ParamType):
@@ -150,10 +158,12 @@ class ActionParamType(click.ParamType):
         return [CompletionItem(a) for a in self.actions if a.startswith(incomplete)]
 
 def iterable_partition(sep, iterable: Iterable) -> Tuple[List, List]:
+    '''partitions iterable by sep'''
     iterable = iter(iterable)
     return list(takewhile(lambda i: i != sep, iterable)), list(iterable)
 
 def get_common_services(servers: List[Server]) -> List[Service]:
+    '''returns common services of given servers'''
     services: List[List[Service]] = [server.services for server in servers]
     if len(services) == 0:
         return []
@@ -163,6 +173,7 @@ def get_common_services(servers: List[Server]) -> List[Service]:
         return list(reduce(lambda a, b: set(a) & set(b), services))
     
 def get_possible_servers(webs_path: str, cfg_file: str, cfg_format: str) -> List[Server]:
+    '''returns list of all servers in webs_path'''
     dirs = [dir for dir in os.listdir(webs_path) if os.path.isdir(os.path.join(webs_path, dir))]
     server_paths = [server for server in dirs if cfg_file in os.listdir(os.path.join(webs_path, server))]
     return [Server.from_globals(webs_path, server, cfg_file, cfg_format) for server in server_paths]
