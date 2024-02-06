@@ -295,6 +295,8 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
                 stderr=subprocess.PIPE,
                 text=True
                 )
+            if server.action('status_check').command:
+                click.secho(result.stdout, server.action('status_check').command, fg='yellow')
             click.secho(result.stdout, fg='green')
             click.secho(result.stderr, fg='red')
         elif action in ['path']:
