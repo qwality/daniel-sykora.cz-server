@@ -288,7 +288,7 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
             click.secho(result.stderr, fg='red')
         elif action in ['status']:
             subprocess.run(
-                server.action('status').command,
+                server.action('status').command + ' | grep -v "COMMAND" | awk "{print $1}" | uniq | tr "\n" " "; echo',
                 shell=True,
                 cwd=path
                 )
