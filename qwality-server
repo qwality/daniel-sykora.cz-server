@@ -252,7 +252,7 @@ def print_commands(path: str, long_command: str):
         click.secho(f'{os.getlogin()}@{socket.gethostname()}:{path}# {command}', fg='yellow', dim=True)
     click.echo()
 
-def perform_action(action: str, _servers: List[str], _services: List[str], options: Dict[str, Any], quite: bool) -> None:
+def perform_action(action: str, _servers: List[str], _services: List[str], options: Dict[str, Any], quiet: bool) -> None:
     def get_params(action: str, _servers: List[str], _services: List[str]) -> Tuple[str, List[Server], bool]:
         self_server = 'self' in _servers
         if self_server: _servers.remove('self')
@@ -270,7 +270,7 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
     action, servers, all_services = get_params(action, _servers, _services)
 
     for server in servers:
-        if not quite: click.secho(server.name, fg='green')
+        if not quiet: click.secho(server.name, fg='green')
         path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
         if action in ['update', 'redeploy']:
             # path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
@@ -368,8 +368,8 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
 @click.option('--admin-path', '-admin', default=ADMIN_PATH, type=click.Path(exists=True))
 @click.option('--verbose', '-v', is_flag=True)
 @click.option('--install', is_flag=True)
-@click.option('--quite', '-q', is_flag=True)
-def get_params(action, body, cfg_file, webs_path, admin_path, cfg_format, verbose, install, quite):
+@click.option('--quiet', '-q', is_flag=True)
+def get_params(action, body, cfg_file, webs_path, admin_path, cfg_format, verbose, install, quiet):
     
     servers, services = iterable_partition(SEP, body)
 
@@ -392,7 +392,7 @@ def get_params(action, body, cfg_file, webs_path, admin_path, cfg_format, verbos
             click.secho('\ninstallation failed copy the yellow commands and execute them 1 by 1\n', fg='red')
         return
     
-    if not quite: click.secho(f'{action} {servers} {services}', fg='yellow')
+    if not quiet: click.secho(f'{action} {servers} {services}', fg='yellow')
     if verbose: click.secho(
         f'''options:
         [ 
@@ -403,7 +403,7 @@ def get_params(action, body, cfg_file, webs_path, admin_path, cfg_format, verbos
         ]''',
         fg='yellow')
 
-    perform_action(action, servers, services, options, quite)
+    perform_action(action, servers, services, options, quiet)
 
 if __name__ == '__main__':
     get_params()
