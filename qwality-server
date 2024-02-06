@@ -290,8 +290,13 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
             subprocess.run(
                 server.action('status').command + ' | grep -v "COMMAND" | awk "{print \\$1}" | uniq | tr "\n" " "; echo',
                 shell=True,
-                cwd=path
+                cwd=path,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
                 )
+            click.secho(result.stdout, fg='green')
+            click.secho(result.stderr, fg='red')
         elif action in ['path']:
             # path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
             click.secho( f'cd {path}', fg='yellow', dim=True)
