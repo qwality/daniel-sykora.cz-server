@@ -298,6 +298,8 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
             
             status_check = server.action('status_check').command
             if status_check:
+                click.secho(status_check)
+                click.secho(result.stdout)
                 if status_check == result.stdout:
                     click.secho('OK', fg='green')
                 else:
