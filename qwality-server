@@ -295,10 +295,17 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
                 stderr=subprocess.PIPE,
                 text=True
                 )
-            if server.action('status_check').command:
-                click.secho(server.action('status_check').command, fg='yellow')
-            click.secho(result.stdout, fg='green')
-            click.secho(result.stderr, fg='red')
+            
+            status_check = server.action('status_check').command
+            if status_check:
+                if status_check == result.stdout:
+                    click.secho('OK', fg='green')
+                else:
+                    click.secho('ERROR', fg='red')
+            else:
+                click.secho(result.stdout, fg='green')
+                click.secho(result.stderr, fg='red')
+
         elif action in ['path']:
             # path = server.get_path(options['admin-path']) if server.name == '' else server.get_path(options['webs-path'])
             click.secho( f'cd {path}', fg='yellow', dim=True)
