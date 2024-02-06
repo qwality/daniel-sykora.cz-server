@@ -298,12 +298,10 @@ def perform_action(action: str, _servers: List[str], _services: List[str], optio
             
             status_check = server.action('status_check').command
             if status_check:
-                click.secho([status_check.strip()])
-                click.secho([result.stdout.strip()])
-                if status_check == result.stdout:
+                if status_check.strip() == result.stdout.strip():
                     click.secho('OK', fg='green')
                 else:
-                    click.secho('ERROR', fg='red')
+                    click.secho('NO', fg='red')
             else:
                 click.secho(result.stdout, fg='green')
                 click.secho(result.stderr, fg='red')
