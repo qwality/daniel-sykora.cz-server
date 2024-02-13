@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source ~/.bashrc
+
 status_1=$(qwality-server -q status daniel-sykora.cz)
 status_2=$(qwality-server -q status rails-redmine)
 
