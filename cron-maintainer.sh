@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # source ~/.bashrc
+. $HOME/.asdf/asdf.sh
 asdf shell nodejs 21.6.1
 nvm -v
 node -v
