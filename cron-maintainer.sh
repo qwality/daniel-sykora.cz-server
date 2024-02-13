@@ -4,8 +4,8 @@
 # . $HOME/.asdf/asdf.sh
 # asdf shell nodejs 21.6.1
 # nvm -v
-node -v
-rails -v
+# node -v
+# rails -v
 # asdf -v
 
 status_1=$(qwality-server -q status daniel-sykora.cz)
