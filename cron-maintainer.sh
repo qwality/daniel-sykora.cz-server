@@ -2,9 +2,9 @@
 
 # source ~/.bashrc
 
-# nvm -v
-# node -v
-# rails -v
+nvm -v
+node -v
+rails -v
 
 status_1=$(qwality-server -q status daniel-sykora.cz)
 status_2=$(qwality-server -q status rails-redmine)
