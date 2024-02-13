@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # source ~/.bashrc
-asdf local nodejs 21.6.1
+asdf shell nodejs 21.6.1
 nvm -v
 node -v
 rails -v
