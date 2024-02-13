@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 # source ~/.bashrc
-
+asdf local nodejs 21.6.1
 nvm -v
 node -v
 rails -v
-asdf -v
+# asdf -v
 
 # status_1=$(qwality-server -q status daniel-sykora.cz)
 # status_2=$(qwality-server -q status rails-redmine)
