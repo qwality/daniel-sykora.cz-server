@@ -1,3 +1,5 @@
 pridat command ktery me dostane na cd serveru/admina 'qwality-server cd self | daniel-sykora.cz'
 pridat status action
 pridat ssl action
+
+pridat do kron ulohy kontrolu a spousteni nginxu
